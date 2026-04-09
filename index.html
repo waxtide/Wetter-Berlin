@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Berlin Wetter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet">
+<style>
+:root,[data-theme="light"]{--bg:#f7f6f2;--surface:#ffffff;--surface-2:#f3f4f8;--surface-3:#eceef5;--border:#2b6aa51f;--text:#f4f7fb;--muted:#9aa4b2;--strong:#ffffff;--brand:#2ea8ff;--brand-2:#1f8be0;--danger-bg:#3b2126;--danger-border:#7d3f48;--danger-text:#ffd9df;--card:#111827;--shell:#0b1220;--shell-2:#11192b;--shadow:0 12px 30px rgba(0,0,0,.35)}
+[data-theme="dark"]{--bg:#070b14;--surface:#0f1728;--surface-2:#121c31;--surface-3:#18243c;--border:#22314f;--text:#eef4ff;--muted:#97a3b6;--strong:#ffffff;--brand:#2da7ff;--brand-2:#1089e8;--danger-bg:#341f24;--danger-border:#6f3a44;--danger-text:#ffd9df;--card:#0e1626;--shell:#081120;--shell-2:#0d1627;--shadow:0 18px 38px rgba(0,0,0,.42)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:linear-gradient(180deg,var(--bg),#0a1020 65%);color:var(--text);min-height:100dvh}
+.app{max-width:430px;margin:0 auto;padding:14px 12px 20px}
+.header{display:flex;align-items:center;justify-content:space-between;padding:14px 14px;background:linear-gradient(180deg,var(--shell),var(--shell-2));border:1px solid var(--border);border-radius:16px 16px 12px 12px;box-shadow:var(--shadow);margin-bottom:10px}
+.header-left{display:flex;align-items:center;gap:12px}.header-icon{font-size:26px}.header-title{font-weight:700;font-size:17px;color:var(--strong)}.header-coords{font-size:12px;color:var(--muted)}.header-actions{display:flex;gap:8px}
+.btn-icon{background:transparent;border:none;cursor:pointer;color:var(--muted);padding:6px;border-radius:8px;font-size:18px}.btn-icon:hover{background:rgba(255,255,255,.04);color:var(--strong)}
+.tabs{display:flex;gap:8px;margin:0 0 12px}.tab{flex:1;padding:10px 6px;border:1px solid var(--border);background:linear-gradient(180deg,var(--shell),var(--shell-2));color:var(--muted);border-radius:12px;cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px}.tab.active{background:linear-gradient(180deg,#16395b,#0f7fcb);color:#eaf6ff;border-color:#2b95eb;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.panel{display:none}.panel.active{display:block}
+.card{background:linear-gradient(180deg,var(--shell),#0c1423);border-radius:16px;padding:18px;border:1px solid var(--border);box-shadow:var(--shadow);margin-bottom:10px}
+.current-shell{background:linear-gradient(180deg,#0c1322,#0a1120);border:1px solid var(--border);border-radius:16px;padding:18px;min-height:520px;box-shadow:var(--shadow)}
+.current-temp{font-size:76px;font-weight:300;line-height:1;letter-spacing:-3px;color:var(--strong)}
+.current-desc{font-size:17px;color:var(--strong);margin-top:8px;text-transform:capitalize}.current-feels{font-size:13px;color:var(--muted);margin-top:4px}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:18px}.metric{background:linear-gradient(180deg,#111a2d,#0d1627);border-radius:12px;padding:12px;border:1px solid var(--border)}.metric-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}.metric-value{font-size:20px;font-weight:600;margin-top:4px;color:var(--strong)}
+.forecast-list{display:grid;gap:12px}.forecast-day-card{background:linear-gradient(180deg,#0c1322,#0a1120);border:1px solid var(--border);border-radius:16px;padding:14px;box-shadow:var(--shadow)}.forecast-day-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.forecast-day-title{font-size:15px;font-weight:700;color:var(--strong)}.forecast-day-range{font-size:13px;color:var(--muted)}.forecast-slots{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.forecast-slot{background:linear-gradient(180deg,#111a2d,#0d1627);border:1px solid var(--border);border-radius:12px;padding:12px;min-height:92px}.forecast-slot-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}.forecast-slot-icon{font-size:22px;line-height:1;margin-bottom:8px}.forecast-slot-temp{font-size:20px;font-weight:700;color:var(--strong);margin-bottom:4px}.forecast-slot-desc{font-size:12px;color:var(--muted);line-height:1.35}.forecast-slot-rain{font-size:11px;color:#67bbff;margin-top:6px}
+.loading{text-align:center;padding:44px 20px;color:var(--muted)}.loading-spinner{width:32px;height:32px;border:3px solid rgba(255,255,255,.12);border-top-color:var(--brand);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}@keyframes spin{to{transform:rotate(360deg)}}
+.error-card{background:var(--danger-bg);border-radius:16px;padding:28px 18px;text-align:center;border:1px solid var(--danger-border)}.error-icon{font-size:34px;margin-bottom:10px}.error-title{font-weight:700;margin-bottom:8px;color:var(--danger-text)}.error-msg{font-size:13px;color:#f0c3cb;margin-bottom:16px}.btn-retry{background:linear-gradient(180deg,var(--brand),var(--brand-2));color:white;border:none;border-radius:11px;padding:11px 24px;font-family:'Inter',sans-serif;font-size:14px;cursor:pointer;font-weight:600}.updated-time{font-size:11px;color:var(--muted);text-align:center;margin-top:10px}
+.radar-shell{background:linear-gradient(180deg,#0c1322,#0a1120);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
+.radar-map{border-radius:14px;overflow:hidden;height:390px;position:relative;background:#0a1628;border:1px solid var(--border)}
+.radar-map iframe{width:100%;height:100%;border:0;display:block}
+.radar-fallback{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;color:var(--muted);background:linear-gradient(180deg,rgba(7,11,20,.15),rgba(7,11,20,.75))}
+.radar-open{display:flex;justify-content:center;margin-top:12px}.radar-button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:12px 16px;border-radius:12px;background:linear-gradient(180deg,var(--brand),var(--brand-2));color:#fff;text-decoration:none;font-size:14px;font-weight:600;border:1px solid rgba(255,255,255,.08)}.pollen-list{display:grid;gap:12px}.pollen-card{background:linear-gradient(180deg,#0c1322,#0a1120);border:1px solid var(--border);border-radius:16px;padding:14px;box-shadow:var(--shadow)}.pollen-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.pollen-title{font-size:15px;font-weight:700;color:var(--strong)}.pollen-sub{font-size:12px;color:var(--muted)}.pollen-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.pollen-item{background:linear-gradient(180deg,#111a2d,#0d1627);border:1px solid var(--border);border-radius:12px;padding:12px}.pollen-name{font-size:12px;color:var(--muted);margin-bottom:8px}.pollen-value{font-size:22px;font-weight:700;color:var(--strong)}.pollen-level{font-size:12px;margin-top:4px}.level-low{color:#7fd992}.level-medium{color:#ffd166}.level-high{color:#ff7b7b}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-left">
+      <div class="header-icon">🌧️</div>
+      <div>
+        <div class="header-title">Berlin Wetter</div>
+        <div class="header-coords">52.52°N · 13.41°O</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-icon" id="refreshBtn" title="Aktualisieren">↻</button>
+      <button class="btn-icon" id="themeBtn" title="Design wechseln">☀️</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="current">🌡️ Aktuell</button>
+    <button class="tab" data-tab="forecast">📅 Vorhersage</button>
+    <button class="tab" data-tab="radar">🔵 Regenradar</button>
+    <button class="tab" data-tab="pollen">🌼 Pollenflug</button>
+  </div>
+
+  <div id="current" class="panel active">
+    <div id="currentContent"><div class="current-shell"><div class="loading"><div class="loading-spinner"></div>Wetterdaten werden geladen…</div></div></div>
+  </div>
+  <div id="forecast" class="panel">
+    <div id="forecastContent"><div class="forecast-list"><div class="loading"><div class="loading-spinner"></div>Vorhersage wird geladen…</div></div></div>
+  </div>
+  <div id="radar" class="panel">
+    <div class="radar-shell">
+      <div class="radar-map">
+        <iframe src="https://www.rainviewer.com/map.html?loc=52.52,13.41,7&oFa=0&layer=radar&sm=1&sn=1" title="Regenradar Berlin" loading="lazy" referrerpolicy="no-referrer"></iframe>
+        <div class="radar-fallback" id="radarFallback" style="display:none">
+          <div style="font-size:28px;margin-bottom:8px">🛰️</div>
+          <div style="font-weight:700;color:var(--strong);margin-bottom:6px">Radar konnte nicht eingebettet werden</div>
+          <div style="font-size:13px;max-width:28ch">Manche iPhone- oder In-App-Browser blockieren externe Karten in eingebetteten Ansichten.</div>
+        </div>
+      </div>
+      <div class="radar-open">
+        <a href="https://www.rainviewer.com/map.html?loc=52.52,13.41,7" target="_blank" rel="noopener noreferrer" class="radar-button">Radar extern öffnen</a>
+      </div>
+    </div>
+  </div>
+  <div id="pollen" class="panel">
+    <div id="pollenContent"><div class="forecast-list"><div class="loading"><div class="loading-spinner"></div>Pollenflug wird geladen…</div></div></div>
+  </div>
+</div>
+
+<script>
+const LAT = 52.52, LON = 13.41;
+
+const WMO_CODES = {
+  0:"Klarer Himmel",1:"Überwiegend klar",2:"Teils bewölkt",3:"Bedeckt",
+  45:"Nebel",48:"Gefrierender Nebel",51:"Leichter Nieselregen",53:"Nieselregen",55:"Starker Nieselregen",
+  61:"Leichter Regen",63:"Regen",65:"Starker Regen",
+  71:"Leichter Schnee",73:"Schneefall",75:"Starker Schneefall",
+  80:"Leichte Schauer",81:"Schauer",82:"Starke Schauer",
+  95:"Gewitter",96:"Gewitter mit Hagel",99:"Gewitter mit starkem Hagel"
+};
+
+const WMO_ICONS = {
+  0:"☀️",1:"🌤️",2:"⛅",3:"☁️",45:"🌫️",48:"🌫️",
+  51:"🌦️",53:"🌦️",55:"🌧️",61:"🌧️",63:"🌧️",65:"🌧️",
+  71:"🌨️",73:"❄️",75:"❄️",80:"🌦️",81:"🌧️",82:"⛈️",
+  95:"⛈️",96:"⛈️",99:"⛈️"
+};
+
+const DAYS = ["So","Mo","Di","Mi","Do","Fr","Sa"];
+
+function wmoDesc(code){return WMO_CODES[code]||"Unbekannt"}
+function wmoIcon(code){return WMO_ICONS[code]||"🌡️"}
+
+async function fetchWeather(){
+  const endpoints = [
+    `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_direction_10m,precipitation,weather_code,pressure_msl&hourly=temperature_2m,weather_code,precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum&timezone=Europe%2FBerlin&forecast_days=7&wind_speed_unit=kmh`,
+    `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${LAT}&lon=${LON}`
+  ];
+
+  let lastError = null;
+
+  for (const url of endpoints) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 12000);
+      const res = await fetch(url, {
+        signal: controller.signal,
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'BerlinWetterApp/1.0'
+        }
+      });
+      clearTimeout(timeout);
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      if (url.includes('open-meteo')) return data;
+      if (url.includes('met.no')) return convertMetNoToAppFormat(data);
+    } catch (e) {
+      lastError = e;
+    }
+  }
+
+  throw lastError || new Error('Keine Wetterquelle erreichbar');
+}
+
+function convertMetNoToAppFormat(data){
+  const timeseries = data?.properties?.timeseries || [];
+  if (!timeseries.length) throw new Error('met.no Daten leer');
+
+  const current = timeseries[0]?.data?.instant?.details || {};
+  const next1h = timeseries[0]?.data?.next_1_hours?.details || {};
+  const symbol = timeseries[0]?.data?.next_1_hours?.summary?.symbol_code || '';
+
+  const dailyMap = new Map();
+  timeseries.forEach(item => {
+    const date = item.time.slice(0,10);
+    const instant = item?.data?.instant?.details || {};
+    const next = item?.data?.next_6_hours?.details || item?.data?.next_1_hours?.details || {};
+    const sym = item?.data?.next_6_hours?.summary?.symbol_code || item?.data?.next_1_hours?.summary?.symbol_code || 'cloudy';
+    if (!dailyMap.has(date)) {
+      dailyMap.set(date, {temps: [], rain: [], symbols: []});
+    }
+    const day = dailyMap.get(date);
+    if (typeof instant.air_temperature === 'number') day.temps.push(instant.air_temperature);
+    if (typeof next.precipitation_amount === 'number') day.rain.push(next.precipitation_amount);
+    day.symbols.push(sym);
+  });
+
+  const dates = Array.from(dailyMap.keys()).slice(0,7);
+  const daily = {
+    time: [], weather_code: [], temperature_2m_max: [], temperature_2m_min: [], precipitation_probability_max: [], precipitation_sum: []
+  };
+
+  dates.forEach(date => {
+    const d = dailyMap.get(date);
+    daily.time.push(date);
+    daily.temperature_2m_max.push(Math.max(...d.temps));
+    daily.temperature_2m_min.push(Math.min(...d.temps));
+    const rainSum = d.rain.reduce((a,b)=>a+b,0);
+    daily.precipitation_sum.push(rainSum);
+    daily.precipitation_probability_max.push(rainSum > 0 ? 70 : 20);
+    daily.weather_code.push(symbolToWmo(d.symbols[0] || 'cloudy'));
+  });
+
+  return {
+    current: {
+      temperature_2m: current.air_temperature ?? 0,
+      apparent_temperature: current.air_temperature ?? 0,
+      relative_humidity_2m: current.relative_humidity ?? 0,
+      wind_speed_10m: current.wind_speed ?? 0,
+      wind_direction_10m: current.wind_from_direction ?? 0,
+      precipitation: next1h.precipitation_amount ?? 0,
+      weather_code: symbolToWmo(symbol),
+      pressure_msl: current.air_pressure_at_sea_level ?? 0
+    },
+    daily
+  };
+}
+
+function symbolToWmo(symbol){
+  const s = (symbol || '').toLowerCase();
+  if (s.includes('clearsky')) return 0;
+  if (s.includes('fair')) return 1;
+  if (s.includes('partlycloudy')) return 2;
+  if (s.includes('cloudy')) return 3;
+  if (s.includes('fog')) return 45;
+  if (s.includes('heavyrain') || s.includes('rainshowers')) return 65;
+  if (s.includes('rain')) return 61;
+  if (s.includes('sleet')) return 68;
+  if (s.includes('snow')) return 71;
+  if (s.includes('thunder')) return 95;
+  return 3;
+}
+
+function windDir(deg){
+  const dirs=["N","NO","O","SO","S","SW","W","NW"];
+  return dirs[Math.round(deg/45)%8];
+}
+
+
+function getPartLabel(hour){
+  if (hour < 6) return "Nacht";
+  if (hour < 12) return "Morgens";
+  if (hour < 18) return "Mittags";
+  return "Abends";
+}
+
+function pollenLevel(value){
+  if (value == null) return {text:'Keine Daten', cls:'level-medium'};
+  if (value < 10) return {text:'Niedrig', cls:'level-low'};
+  if (value < 50) return {text:'Mittel', cls:'level-medium'};
+  return {text:'Hoch', cls:'level-high'};
+}
+
+async function fetchPollen(){
+  const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${LAT}&longitude=${LON}&hourly=alder_pollen,birch_pollen,grass_pollen,mugwort_pollen,olive_pollen,ragweed_pollen&timezone=Europe%2FBerlin&forecast_days=3`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+  const res = await fetch(url, {
+    signal: controller.signal,
+    headers: {
+      'Accept': 'application/json'
+    }
+  });
+  clearTimeout(timeout);
+  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+function renderPollen(data){
+  const h = data.hourly || {};
+  const times = h.time || [];
+  const species = [
+    {key:'alder_pollen', name:'Erle'},
+    {key:'birch_pollen', name:'Birke'},
+    {key:'grass_pollen', name:'Gräser'},
+    {key:'mugwort_pollen', name:'Beifuß'},
+    {key:'olive_pollen', name:'Olive'},
+    {key:'ragweed_pollen', name:'Ambrosia'}
+  ];
+
+  const grouped = new Map();
+  times.forEach((t, idx) => {
+    const date = t.slice(0,10);
+    if (!grouped.has(date)) grouped.set(date, []);
+    grouped.get(date).push(idx);
+  });
+
+  let cards = '';
+  Array.from(grouped.entries()).slice(0,3).forEach(([date, idxs], i) => {
+    const d = new Date(date);
+    const label = i===0 ? 'Heute' : i===1 ? 'Morgen' : DAYS[d.getDay()];
+    const items = species.map(s => {
+      const vals = idxs.map(idx => h[s.key]?.[idx]).filter(v => typeof v === 'number');
+      const maxVal = vals.length ? Math.round(Math.max(...vals)) : null;
+      const level = pollenLevel(maxVal);
+      return `
+        <div class="pollen-item">
+          <div class="pollen-name">${s.name}</div>
+          <div class="pollen-value">${maxVal ?? '–'}</div>
+          <div class="pollen-level ${level.cls}">${level.text}</div>
+        </div>`;
+    }).join('');
+
+    cards += `
+      <div class="pollen-card">
+        <div class="pollen-head">
+          <div class="pollen-title">${label}</div>
+          <div class="pollen-sub">Tagesmaximum</div>
+        </div>
+        <div class="pollen-grid">${items}</div>
+      </div>`;
+  });
+
+  document.getElementById('pollenContent').innerHTML = `<div class="pollen-list">${cards}</div>`;
+}
+
+function buildDayParts(data){
+  const result = [];
+  const hourly = data.hourly || {};
+  const times = hourly.time || [];
+  const temps = hourly.temperature_2m || [];
+  const codes = hourly.weather_code || [];
+  const rainProb = hourly.precipitation_probability || [];
+
+  if (times.length) {
+    const grouped = new Map();
+    times.forEach((t, idx) => {
+      const date = t.slice(0,10);
+      const hour = Number(t.slice(11,13));
+      const label = getPartLabel(hour);
+      if (!grouped.has(date)) grouped.set(date, {Nacht:[], Morgens:[], Mittags:[], Abends:[]});
+      grouped.get(date)[label].push({temp: temps[idx], code: codes[idx], rain: rainProb[idx]});
+    });
+
+    Array.from(grouped.entries()).slice(0,7).forEach(([date, parts]) => {
+      const makePart = (name) => {
+        const arr = parts[name] || [];
+        if (!arr.length) return {label:name, temp:null, code:3, rain:null, desc:'Keine Daten'};
+        const avgTemp = Math.round(arr.reduce((a,b)=>a+(b.temp ?? 0),0)/arr.length);
+        const avgRain = Math.round(arr.reduce((a,b)=>a+(b.rain ?? 0),0)/arr.length);
+        const code = arr[Math.floor(arr.length/2)]?.code ?? arr[0]?.code ?? 3;
+        return {label:name, temp:avgTemp, code, rain:avgRain, desc:wmoDesc(code)};
+      };
+      result.push({date, parts:[makePart('Nacht'), makePart('Morgens'), makePart('Mittags'), makePart('Abends')]});
+    });
+    return result;
+  }
+
+  const daily = data.daily || {};
+  const dates = daily.time || [];
+  for (let i=0;i<Math.min(7, dates.length);i++) {
+    const min = Math.round(daily.temperature_2m_min?.[i] ?? 0);
+    const max = Math.round(daily.temperature_2m_max?.[i] ?? 0);
+    const mid = Math.round((min+max)/2);
+    const code = daily.weather_code?.[i] ?? 3;
+    const rain = daily.precipitation_probability_max?.[i] ?? 0;
+    result.push({
+      date: dates[i],
+      parts: [
+        {label:'Nacht', temp:min, code, rain, desc:wmoDesc(code)},
+        {label:'Morgens', temp:Math.round((min+mid)/2), code, rain, desc:wmoDesc(code)},
+        {label:'Mittags', temp:max, code, rain, desc:wmoDesc(code)},
+        {label:'Abends', temp:mid, code, rain, desc:wmoDesc(code)}
+      ]
+    });
+  }
+  return result;
+}
+
+function renderCurrent(data){
+  const c = data.current;
+  const temp = Math.round(c.temperature_2m);
+  const feels = Math.round(c.apparent_temperature);
+  const desc = wmoDesc(c.weather_code);
+  const icon = wmoIcon(c.weather_code);
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
+
+  document.getElementById("currentContent").innerHTML = `
+    <div class="current-shell">
+      <div style="font-size:48px;margin-bottom:8px">${icon}</div>
+      <div class="current-temp">${temp}°</div>
+      <div class="current-desc">${desc}</div>
+      <div class="current-feels">Gefühlt ${feels}°C</div>
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-label">Luftfeuchtigkeit</div>
+          <div class="metric-value">${c.relative_humidity_2m}%</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Wind</div>
+          <div class="metric-value">${Math.round(c.wind_speed_10m)} <span style="font-size:13px;font-weight:400">km/h ${windDir(c.wind_direction_10m)}</span></div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Niederschlag</div>
+          <div class="metric-value">${c.precipitation} <span style="font-size:13px;font-weight:400">mm</span></div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Luftdruck</div>
+          <div class="metric-value">${Math.round(c.pressure_msl)} <span style="font-size:13px;font-weight:400">hPa</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="updated-time">Aktualisiert um ${timeStr}</div>
+  `;
+}
+
+function renderForecast(data){
+  const d = data.daily || {};
+  const structured = buildDayParts(data);
+  let items = "";
+
+  structured.forEach((day, i) => {
+    const date = new Date(day.date);
+    const dayName = i===0 ? "Heute" : i===1 ? "Morgen" : DAYS[date.getDay()];
+    const high = Math.round(d.temperature_2m_max?.[i] ?? Math.max(...day.parts.map(p => p.temp ?? -999).filter(v => v > -999)));
+    const low = Math.round(d.temperature_2m_min?.[i] ?? Math.min(...day.parts.map(p => p.temp ?? 999).filter(v => v < 999)));
+
+    const slots = day.parts.map(part => `
+      <div class="forecast-slot">
+        <div class="forecast-slot-label">${part.label}</div>
+        <div class="forecast-slot-icon">${wmoIcon(part.code)}</div>
+        <div class="forecast-slot-temp">${part.temp === null ? '–' : `${part.temp}°`}</div>
+        <div class="forecast-slot-desc">${part.desc}</div>
+        <div class="forecast-slot-rain">${part.rain === null ? '' : `${part.rain}% 💧`}</div>
+      </div>
+    `).join('');
+
+    items += `
+      <div class="forecast-day-card">
+        <div class="forecast-day-head">
+          <div class="forecast-day-title">${dayName}</div>
+          <div class="forecast-day-range">${high}° / ${low}°</div>
+        </div>
+        <div class="forecast-slots">${slots}</div>
+      </div>`;
+  });
+
+  document.getElementById("forecastContent").innerHTML = `<div class="forecast-list">${items}</div>`;
+}
+
+function showError(containerId){
+  document.getElementById(containerId).innerHTML = `
+    <div class="error-card">
+      <div class="error-icon">⚠️</div>
+      <div class="error-title">Wetterdaten nicht verfügbar</div>
+      <div class="error-msg">Die Wetterquelle konnte nicht geladen werden.<br>Wahrscheinlich blockiert dein Gerät oder Browser eine der APIs.</div>
+      <button class="btn-retry" onclick="loadAll()">Erneut versuchen</button>
+    </div>`;
+}
+
+async function loadAll(){
+  document.getElementById("currentContent").innerHTML = '<div class="loading"><div class="loading-spinner"></div>Wetterdaten werden geladen…</div>';
+  document.getElementById("forecastContent").innerHTML = '<div class="forecast-list"><div class="loading"><div class="loading-spinner"></div>Vorhersage wird geladen…</div></div>';
+  document.getElementById("pollenContent").innerHTML = '<div class="forecast-list"><div class="loading"><div class="loading-spinner"></div>Pollenflug wird geladen…</div></div>'; 
+  try {
+    const data = await fetchWeather();
+    renderCurrent(data);
+    renderForecast(data);
+    try {
+      const pollenData = await fetchPollen();
+      renderPollen(pollenData);
+    } catch (pollenErr) {
+      console.error('Pollen-Fehler:', pollenErr && (pollenErr.stack || pollenErr.message || pollenErr));
+      document.getElementById('pollenContent').innerHTML = `
+        <div class="error-card">
+          <div class="error-icon">🌼</div>
+          <div class="error-title">Pollenflug nicht verfügbar</div>
+          <div class="error-msg">Die Pollendaten konnten gerade nicht geladen werden.</div>
+          <button class="btn-retry" onclick="loadAll()">Erneut versuchen</button>
+        </div>`;
+    }
+  } catch(e){
+    console.error("Wetter-Fehler:", e && (e.stack || e.message || e));
+    showError("currentContent");
+    showError("forecastContent");
+    document.getElementById('pollenContent').innerHTML = `
+      <div class="error-card">
+        <div class="error-icon">🌼</div>
+        <div class="error-title">Pollenflug nicht verfügbar</div>
+        <div class="error-msg">Ohne Wetterdaten konnte auch der Pollenflug nicht geladen werden.</div>
+        <button class="btn-retry" onclick="loadAll()">Erneut versuchen</button>
+      </div>`;
+  }
+}
+
+// Tabs
+document.querySelectorAll(".tab").forEach(tab=>{
+  tab.addEventListener("click",()=>{
+    document.querySelectorAll(".tab,.panel").forEach(el=>el.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById(tab.dataset.tab).classList.add("active");
+  });
+});
+
+// Refresh
+document.getElementById("refreshBtn").addEventListener("click",loadAll);
+
+// Theme toggle
+const html = document.documentElement;
+const themeBtn = document.getElementById("themeBtn");
+themeBtn.addEventListener("click",()=>{
+  const isDark = html.getAttribute("data-theme")==="dark";
+  html.setAttribute("data-theme",isDark?"light":"dark");
+  themeBtn.textContent = isDark?"🌙":"☀️";
+});
+
+// Auto-refresh every 10 minutes
+setInterval(loadAll, 600000);
+
+const radarFrame = document.querySelector('.radar-map iframe');
+if (radarFrame) {
+  const fallback = document.getElementById('radarFallback');
+  setTimeout(() => {
+    try {
+      const src = radarFrame.getAttribute('src') || '';
+      if (!src.includes('rainviewer')) fallback.style.display = 'flex';
+    } catch (e) {
+      fallback.style.display = 'flex';
+    }
+  }, 4000);
+  radarFrame.addEventListener('error', () => fallback.style.display = 'flex');
+}
+
+loadAll();
+</script>
+</body>
+</html>
